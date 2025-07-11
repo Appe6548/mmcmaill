@@ -1,0 +1,120 @@
+---
+title: Introduction
+description: Welcome to the WR.DO documentation.
+---
+
+## Introduction
+
+WR.DO is a all-in-one web utility platform featuring short links with analytics, temporary email service, subdomain management, open APIs for screenshots and metadata extraction, plus comprehensive admin dashboard.
+
+## Features
+
+- 🔗 **Short Link Service**:
+  - Custom short links
+  - Generate custom QR codes
+  - Password-protected links
+  - Expiration time control
+  - Access analytics (real-time logs, maps, and multi-dimensional data analysis)
+  - API integration for link creation
+
+- 📮 **Email Service**:
+  - Create custom prefix emails
+  - Filter unread email lists
+  - Unlimited mailbox creation
+  - Receive unlimited emails (powered by Cloudflare Email Worker)
+  - Send emails (powered by Resend)
+  - Support catch-all emails
+  - Support push to telegram groups
+  - API endpoints for mailbox creation
+  - API endpoints for inbox retrieval
+
+- 🌐 **Subdomain Management Service**:
+  - Manage DNS records across multiple Cloudflare accounts and domains
+  - Create various DNS record types (CNAME, A, TXT, etc.)
+  - Support enabling application mode (user submission, admin approval)
+  - Support email notification of administrator and user domain application status
+
+- 💳 **Cloud Storage Service**
+  - Connects to multiple channels (S3 API) cloud storage platforms (Cloudflare R2, AWS S3)
+  - Supports single-channel multi-bucket configuration
+  - Dynamic configuration (user quota settings) for file upload size limits
+  - Supports drag-and-drop, batch, and chunked file uploads
+  - Supports batch file deletion
+  - Quickly generates short links and QR codes for files
+  - Supports online preview of certain file types
+  - Supports file uploads via API calls
+
+- 📡 **Open API Module**:
+  - Website metadata extraction API
+  - Website screenshot capture API
+  - Website QR code generation API
+  - Convert websites to Markdown/Text format
+  - Comprehensive API call logging and statistics
+  - User API key generation for third-party integrations
+  
+- 🔒 **Administrator Module**:
+  - Multi-dimensional dashboard with website analytics
+  - Dynamic service configuration (toggle short links, email, subdomain management)
+  - User management (permissions, quotas, account control)
+  - Dynamically configure login methods (Google, GitHub, Magic Link, Credentials, LinuxDO)
+  - Centralized short link administration
+  - Centralized email management
+  - Centralized subdomain administration
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="https://wr.do/_static/images/light-preview.png" /></td>
+    <td><img src="https://wr.do/_static/images/example_02.png" /></td>
+  </tr>
+  <tr>
+    <td><img src="https://wr.do/_static/images/example_01.png" /></td>
+    <td><img src="https://wr.do/_static/images/realtime-globe.png" /></td>
+  </tr>
+  <tr>
+    <td><img src="https://wr.do/_static/images/example_03.png" /></td>
+    <td><img src="https://wr.do/_static/images/domains.png" /></td>
+  </tr>
+</table>
+
+## Quick Start
+
+See docs about [guide](/docs/quick-start) for quick start.
+
+## Self-hosted Tutorial
+
+See step by step installation tutorial at [Quick Start for Developer](https://wr.do/docs/developer/quick-start).
+
+### Requirements
+
+- [Vercel](https://vercel.com) to deploy app
+- [Cloudflare](https://dash.cloudflare.com/) account  
+- A **domain** name hosted on Cloudflare
+
+See docs about [developer](/docs/developer/installation).
+
+## Local development
+
+copy `.env.example` to `.env` and fill in the necessary environment variables.
+
+```bash
+git clone https://github.com/oiov/wr.do
+cd wr.do
+pnpm install
+
+# run on localhost:3000
+pnpm dev
+```
+
+## Community Group
+
+- Discord: https://discord.gg/d68kWCBDEs
+
+## License
+
+[MIT](https://github.com/oiov/wr.do/LICENSE.md)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=oiov/wr.do&type=Date)](https://star-history.com/#oiov/wr.do&Date)

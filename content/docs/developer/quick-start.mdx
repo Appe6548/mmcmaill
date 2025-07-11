@@ -1,0 +1,202 @@
+---
+title: Quick Start for Developer
+description: Step by step installation
+---
+
+<DocsLang en="/docs/developer/quick-start" zh="/docs/developer/quick-start-zh" />
+
+## 0. Installation
+
+```bash
+git clone https://github.com/oiov/wr.do
+```
+
+Enter in the folder and install dependencies for your project:
+
+```bash
+cd wrdo
+pnpm install
+```
+
+### Create a `.env` file
+
+Copy/paste the `.env.example` in the `.env` file
+
+## 1. Configure the Database
+
+### Prepare the Server Database Instance and Obtain the Connection URL
+
+Before deployment, make sure you have prepared a Postgres database instance. You can choose one of the following methods:
+
+- A. Use Serverless Postgres instances like Vercel / Neon;
+- B. Use self-deployed Postgres instances like Docker.
+
+The configuration for both methods is slightly different, and will be distinguished in the next step.
+
+### Add Environment Variables in Vercel
+
+In Vercel's deployment environment variables, add `DATABASE_URL` and other environment variables, 
+and fill in the Postgres database connection URL prepared in the previous step. 
+The typical format for the database connection URL is
+
+`postgres://username:password@host:port/database`.
+
+```js title=".env"
+DATABASE_URL=
+```
+
+### Deploy Postgres
+
+```bash
+pnpm postinstall
+pnpm db:push
+```
+
+#### Or manually init 
+
+Via [migration.sql](https://github.com/oiov/wr.do/blob/main/prisma/migrations), 
+copy the sql code to the database to initialize the database schema.
+
+### Add the AUTH_SECRET Environment Variable
+
+The `AUTH_SECRET` environment variable is used to encrypt tokens and email verification hashes(NextAuth.js).
+You can generate one from https://generate-secret.vercel.app/32:
+
+```js title=".env"
+AUTH_SECRET=10000032bsfasfafk4lkkfsa
+AUTH_URL=http://localhost:3000
+```
+
+## 2. Configure Authentication Service
+
+The server-side database needs to be paired with a user authentication service to function properly. 
+Therefore, the corresponding authentication service needs to be configured.
+
+We provide the following authentication services:
+
+- Google
+- Github
+- LinuxDo
+- Resend Email Verification
+
+### Google config
+
+In this section, you can update these variables:
+
+```js title=".env"
+GOOGLE_CLIENT_ID = your_secret_client_id.apps.googleusercontent.com;
+GOOGLE_CLIENT_SECRET = your_secret_client;
+```
+
+See config tutorial in [Authjs - Google OAuth](https://authjs.dev/getting-started/providers/google).
+
+### Github config
+
+In this section, you can update these variables:
+
+```js title=".env"
+GITHUB_ID = your_secret_client_id;
+GITHUB_SECRET = your_secret_client;
+```
+
+See config tutorial in [Authjs - Github OAuth](https://authjs.dev/getting-started/providers/github).
+
+### LinuxDo config
+
+```js title=".env"
+LinuxDo_CLIENT_ID=
+LinuxDo_CLIENT_SECRET=
+```
+
+See config tutorial in [Connect LinuxDo](https://connect.linux.do).
+
+### Resend Email Verification config
+
+<Callout type="note">
+  The email part is similar at the [resend](https://resend.com/) documentation.
+  You can find the official documentation
+  [here](https://authjs.dev/getting-started/installation#setup-environment) if
+  you want.
+</Callout>
+
+<Steps>
+
+#### Create an account
+
+If don't have an account on Resend, just follow their steps after signup [here](https://resend.com/signup).
+
+#### Create an API key
+
+After signin on Resend, he propurse you to create your first API key.
+
+Copy/paste in your `.env` file.
+
+```js
+RESEND_API_KEY=re_your_resend_api_key;
+RESEND_FROM_EMAIL="you <support@your-domain.com>"
+```
+
+</Steps>
+
+## 3. Email Worker Configs (Recive email)
+
+See detail in [Email Worker](/docs/developer/cloudflare-email-worker).
+
+After you have completed the above steps, you need add a public domain for r2 storage. 
+
+Via:
+
+```bash
+ https://dash.cloudflare.com/[account_id]/r2/default/buckets/[bucket]/settings
+ ```
+
+![](/_static/docs/r2-domain.png)
+
+```js title=".env"
+NEXT_PUBLIC_EMAIL_R2_DOMAIN=https://email-attachment.wr.do
+```
+
+## 4. Add the SCREENSHOTONE_BASE_URL Environment Variable
+
+It's the base URL for the screenshotone API.
+
+You can deploy your own screenshotone API from [jasonraimondi/url-to-png](https://github.com/jasonraimondi/url-to-png). 
+Deploy docs via [here](https://jasonraimondi.github.io/url-to-png/)
+
+```js title=".env"
+SCREENSHOTONE_BASE_URL=https://api.screenshotone.com
+```
+
+## 5. Add the GITHUB_TOKEN Environment Variable
+
+Via https://github.com/settings/tokens to get your token.
+
+```js title=".env"
+GITHUB_TOKEN=
+```
+
+## 6. Start the Dev Server
+
+```bash
+pnpm dev
+```
+Via [http://localhost:3000](http://localhost:3000)
+
+- Default admin account：`admin@admin.com`
+- Default admin password：`123456`
+
+## 7. Deploy
+
+See [Deploy Guide](/docs/developer/deploy).
+
+## Q & A
+ 
+### Worker Error - Too many redirects
+
+Via:
+
+```bash
+https://dash.cloudflare.com/[account_id]/[zone_name]/ssl-tls/configuration
+```
+
+Change the `SSL/TLS Encryption` Mode to `Full` in the Cloudflare dashboard.
