@@ -12,26 +12,23 @@ import { getVerificationEmailHtml, resend } from "./lib/email";
 const linuxDoProvider: any = {
   id: "linuxdo",
   name: "Linux Do",
-  version: "2.0",
-  type: "oauth",
-  authorization: "https://connect.linux.do/oauth2/authorize",
-  token: "https://connect.linux.do/oauth2/token",
-  userinfo: "https://connect.linux.do/api/user",
+  type: "oidc",
+  issuer: "https://connect.linux.do/",
+  authorization: {
+    params: {
+      scope: "openid profile email",
+    },
+  },
   clientId: env.LinuxDo_CLIENT_ID,
   clientSecret: env.LinuxDo_CLIENT_SECRET,
   checks: ["state"],
   profile: (profile: any) => {
-    console.log("profile", profile);
     return {
-      id: profile.id.toString(),
-      name: profile.username,
-      image: profile.avatar_url,
-      email: profile.email,
+      id: String(profile.sub ?? profile.id),
+      name: profile.username ?? profile.login ?? profile.name,
+      image: profile.avatar_url ?? null,
+      email: profile.email ?? null,
       active: profile.active ? 1 : 0,
-      // username: profile.username,
-      // trust_level: profile.trust_level,
-      // silenced: profile.user.silenced,
-      // email: profile.user.email,
     };
   },
 };
