@@ -332,6 +332,25 @@ export async function getEmailsByEmailAddress(
   };
 }
 
+export async function canAccessEmailAddress(
+  emailAddress: string,
+  userId: string,
+  admin: boolean,
+) {
+  const userEmail = await prisma.userEmail.findFirst({
+    where: {
+      emailAddress,
+      deletedAt: null,
+      ...(admin ? {} : { userId }),
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(userEmail);
+}
+
 /**
  * 将邮件标记为已读
  * @param emailId 需要标记为已读的邮件ID
@@ -468,9 +487,22 @@ export async function markAllEmailsAsRead(userEmailId: string, userId: string) {
 }
 
 // 删除邮件
-export async function deleteEmailsByIds(ids: string[]) {
+export async function deleteEmailsByIds(
+  ids: string[],
+  userId?: string,
+  admin: boolean = false,
+) {
   return prisma.forwardEmail.deleteMany({
-    where: { id: { in: ids } },
+    where: {
+      id: { in: ids },
+      ...(admin || !userId
+        ? {}
+        : {
+            UserEmail: {
+              userId,
+            },
+          }),
+    },
   });
 }
 

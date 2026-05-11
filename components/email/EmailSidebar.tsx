@@ -58,6 +58,16 @@ interface EmailSidebarProps {
   setAdminModel: (isAdminModel: boolean) => void;
 }
 
+interface EmailShareResponse {
+  id: string;
+  token: string;
+  active: boolean;
+  emailAddress: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function EmailSidebar({
   user,
   onSelectEmail,
@@ -84,6 +94,9 @@ export default function EmailSidebar({
   const [onlyUnread, setOnlyUnread] = useState(false);
 
   const [showSendsModal, setShowSendsModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareInfo, setShareInfo] = useState<EmailShareResponse | null>(null);
+  const [isSharePending, startShareTransition] = useTransition();
 
   const [pageSize, setPageSize] = useState(10);
 
@@ -237,6 +250,92 @@ export default function EmailSidebar({
     } else {
       toast.error("Input does not match. Please type correctly.");
     }
+  };
+
+  const copyToClipboard = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success("Share URL copied");
+    } catch (error) {
+      toast.error("Failed to copy share URL");
+    }
+  };
+
+  const handleOpenShareEmail = (email: UserEmailList) => {
+    startShareTransition(async () => {
+      try {
+        const res = await fetch("/api/email/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userEmailId: email.id,
+          }),
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          toast.error(body?.error || "Failed to create share URL");
+          return;
+        }
+
+        const share = (await res.json()) as EmailShareResponse;
+        setShareInfo(share);
+        setShowShareModal(true);
+        await copyToClipboard(share.url);
+      } catch (error) {
+        toast.error("Failed to create share URL");
+      }
+    });
+  };
+
+  const handleRegenerateShare = () => {
+    if (!shareInfo) return;
+
+    startShareTransition(async () => {
+      try {
+        const res = await fetch(`/api/email/share/${shareInfo.id}/regenerate`, {
+          method: "POST",
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          toast.error(body?.error || "Failed to regenerate share URL");
+          return;
+        }
+
+        const share = (await res.json()) as EmailShareResponse;
+        setShareInfo(share);
+        await copyToClipboard(share.url);
+      } catch (error) {
+        toast.error("Failed to regenerate share URL");
+      }
+    });
+  };
+
+  const handleRevokeShare = () => {
+    if (!shareInfo) return;
+
+    startShareTransition(async () => {
+      try {
+        const res = await fetch(`/api/email/share/${shareInfo.id}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          toast.error(body?.error || "Failed to revoke share URL");
+          return;
+        }
+
+        setShareInfo({
+          ...shareInfo,
+          active: false,
+        });
+        toast.success("Share URL revoked");
+      } catch (error) {
+        toast.error("Failed to revoke share URL");
+      }
+    });
   };
 
   return (
@@ -526,6 +625,20 @@ export default function EmailSidebar({
                       }
                     }}
                   />
+                  {user.role === "ADMIN" && !email.deletedAt && (
+                    <Icons.link
+                      className={cn(
+                        "size-5 rounded border p-1 text-primary",
+                        !isMobile
+                          ? "hidden hover:bg-neutral-200 group-hover:inline"
+                          : "",
+                      )}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenShareEmail(email);
+                      }}
+                    />
+                  )}
                   <CopyButton
                     value={`${email.emailAddress}`}
                     className={cn(
@@ -728,6 +841,55 @@ export default function EmailSidebar({
                 }
               >
                 {t("Confirm Delete")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showShareModal && shareInfo && (
+        <Modal showModal={showShareModal} setShowModal={setShowShareModal}>
+          <div className="p-6">
+            <h2 className="mb-2 text-lg font-semibold">Share email inbox</h2>
+            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+              Anyone with this URL can view received emails for{" "}
+              <strong>{shareInfo.emailAddress}</strong>. The link is read-only.
+            </p>
+            <div className="mb-2 flex items-center gap-2">
+              <Input
+                readOnly
+                value={shareInfo.url}
+                className="font-mono text-xs"
+                onFocus={(event) => event.currentTarget.select()}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => copyToClipboard(shareInfo.url)}
+                disabled={!shareInfo.active}
+              >
+                Copy
+              </Button>
+            </div>
+            <p className="mb-4 text-xs text-neutral-500">
+              Status: {shareInfo.active ? "Active" : "Revoked"}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleRegenerateShare}
+                disabled={isSharePending}
+              >
+                Regenerate
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleRevokeShare}
+                disabled={isSharePending || !shareInfo.active}
+              >
+                Revoke
               </Button>
             </div>
           </div>

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { deleteEmailsByIds, getEmailsByEmailAddress } from "@/lib/dto/email";
+import {
+  canAccessEmailAddress,
+  deleteEmailsByIds,
+  getEmailsByEmailAddress,
+} from "@/lib/dto/email";
 import { checkUserStatus } from "@/lib/dto/user";
 import { getCurrentUser } from "@/lib/session";
 
@@ -22,6 +26,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const canAccess = await canAccessEmailAddress(
+      emailAddress,
+      user.id,
+      user.role === "ADMIN",
+    );
+
+    if (!canAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const emails = await getEmailsByEmailAddress(emailAddress, page, pageSize);
     return NextResponse.json(emails, { status: 200 });
   } catch (error) {
@@ -46,7 +60,7 @@ export async function DELETE(req: NextRequest) {
       return Response.json("ids is required", { status: 400 });
     }
 
-    await deleteEmailsByIds(ids);
+    await deleteEmailsByIds(ids, user.id, user.role === "ADMIN");
 
     return Response.json("success", { status: 200 });
   } catch (error) {

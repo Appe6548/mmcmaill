@@ -71,6 +71,7 @@ model User {
   UserEmail     UserEmail[]
   UserSendEmail UserSendEmail[]
   UserFile      UserFile[]
+  EmailShare    EmailShare[]
 
   @@index([createdAt])
   @@map(name: "users")
@@ -224,6 +225,7 @@ model UserEmail {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   forwardEmails ForwardEmail[] // 与 ForwardEmail 的 from 字段关联
+  emailShares   EmailShare[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -231,6 +233,24 @@ model UserEmail {
 
   @@index([createdAt])
   @@map("user_emails")
+}
+
+model EmailShare {
+  id          String  @id @default(uuid())
+  userEmailId String
+  createdById String
+  token       String  @unique
+  active      Boolean @default(true)
+
+  userEmail UserEmail @relation(fields: [userEmailId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userEmailId, active])
+  @@index([createdById, createdAt])
+  @@map("email_shares")
 }
 
 model UserSendEmail {
