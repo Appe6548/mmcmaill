@@ -1,7 +1,7 @@
 CREATE TABLE "email_shares"
 (
-  "id" TEXT NOT NULL,
-  "userEmailId" TEXT NOT NULL,
+  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+  "userEmailId" UUID NOT NULL,
   "createdById" TEXT NOT NULL,
   "token" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,

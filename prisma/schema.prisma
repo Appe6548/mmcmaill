@@ -218,7 +218,7 @@ model ForwardEmail {
 }
 
 model UserEmail {
-  id           String @id @default(uuid())
+  id           String @id @default(uuid()) @db.Uuid
   userId       String
   emailAddress String @unique
 
@@ -236,8 +236,8 @@ model UserEmail {
 }
 
 model EmailShare {
-  id          String  @id @default(uuid())
-  userEmailId String
+  id          String  @id @default(uuid()) @db.Uuid
+  userEmailId String  @db.Uuid
   createdById String
   token       String  @unique
   active      Boolean @default(true)
