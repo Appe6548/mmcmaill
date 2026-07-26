@@ -1,6 +1,7 @@
 import { ForwardEmail, UserEmail, UserRole } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { findRecipientMailbox } from "@/lib/email-address";
 
 export type EmailAddress = {
   name: string;
@@ -37,18 +38,17 @@ export interface UserEmailList extends UserEmail {
 }
 
 export async function saveForwardEmail(emailData: OriginalEmail) {
-  const user_email = await prisma.userEmail.findFirst({
-    where: {
-      emailAddress: emailData.to,
-    },
-  });
-  if (!user_email) return null;
+  const recipientMailbox = await findRecipientMailbox(
+    prisma.userEmail,
+    emailData.to,
+  );
+  if (!recipientMailbox) return null;
 
   const res = await prisma.forwardEmail.create({
     data: {
       from: emailData.from,
       fromName: emailData.fromName,
-      to: emailData.to,
+      to: recipientMailbox.emailAddress,
       subject: emailData.subject,
       text: emailData.text,
       html: emailData.html,

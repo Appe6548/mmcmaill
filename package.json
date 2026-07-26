@@ -12,6 +12,7 @@
     "start": "next start",
     "start-docker": "npm-run-all check-db start-server",
     "start-server": "node server.js",
+    "test:unit": "node --experimental-strip-types --test lib/*.test.mjs",
     "lint": "next lint",
     "preview": "next build && next start",
     "postinstall": "prisma generate",
