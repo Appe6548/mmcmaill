@@ -519,6 +519,8 @@
     "What is the limit? It's free?": "邮箱使用有限制吗？是否免费？",
     "How to create emails with api?": "如何使用 API 创建邮箱地址？",
     "Send Email": "发送邮件",
+    "Reply": "回复",
+    "Reply Email": "回复邮件",
     "From": "发件人",
     "To": "收件人",
     "Subject": "主题",

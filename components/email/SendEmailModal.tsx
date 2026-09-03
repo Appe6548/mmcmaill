@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from "react";
 import dynamic from "next/dynamic";
+import { ForwardEmail } from "@prisma/client";
 import { toast } from "sonner";
+
+import { formatDate, htmlToText, isValidEmail } from "@/lib/utils";
 
 import { Icons } from "../shared/icons";
 import { Button } from "../ui/button";
@@ -25,13 +28,56 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 interface SendEmailModalProps {
   className?: string;
   emailAddress: string | null;
+  replyToEmail?: ForwardEmail; // 回复模式：被回复的原始邮件
   triggerButton?: React.ReactNode; // 自定义触发按钮
   onSuccess?: () => void; // 发送成功后的回调
+}
+
+// 从 Reply-To 之类的字段中提取纯邮箱地址（可能是 `"Name <a@b.c>"`、`a@b.c` 或空引号）
+function extractEmailAddress(raw?: string | null): string {
+  if (!raw) return "";
+  const cleaned = raw.replace(/^"+|"+$/g, "").trim();
+  const match = cleaned.match(/<([^<>\s]+@[^<>\s]+)>/);
+  const address = (match ? match[1] : cleaned).trim();
+  return isValidEmail(address) ? address : "";
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildReplySubject(subject?: string | null): string {
+  const original = subject?.trim() || "No Subject";
+  return /^re:/i.test(original) ? original : `Re: ${original}`;
+}
+
+// 以纯文本引用原文，避免外部邮件的复杂 HTML 被编辑器破坏
+function buildQuotedReplyHtml(email: ForwardEmail): string {
+  const sender = email.fromName
+    ? `${email.fromName} <${email.from}>`
+    : email.from;
+  const date = formatDate((email.date || email.createdAt) as any);
+  const originalText = (
+    email.html ? htmlToText(email.html) : email.text || ""
+  ).trim();
+  const quotedLines = [
+    `On ${date}, ${sender} wrote:`,
+    ...originalText.split(/\r?\n/),
+  ]
+    .map((line) => `<blockquote>${escapeHtml(line) || "<br>"}</blockquote>`)
+    .join("");
+  return `<p><br></p>${quotedLines}`;
 }
 
 export function SendEmailModal({
   className,
   emailAddress,
+  replyToEmail,
   triggerButton,
   onSuccess,
 }: SendEmailModalProps) {
@@ -40,6 +86,20 @@ export function SendEmailModal({
   const [isPending, startTransition] = useTransition();
 
   const t = useTranslations("Email");
+  const isReply = Boolean(replyToEmail);
+
+  const handleOpen = () => {
+    setSendForm(
+      replyToEmail
+        ? {
+            to: extractEmailAddress(replyToEmail.replyTo) || replyToEmail.from,
+            subject: buildReplySubject(replyToEmail.subject),
+            html: buildQuotedReplyHtml(replyToEmail),
+          }
+        : { to: "", subject: "", html: "" },
+    );
+    setIsOpen(true);
+  };
 
   const handleSendEmail = async () => {
     if (!emailAddress) {
@@ -60,6 +120,7 @@ export function SendEmailModal({
             to: sendForm.to,
             subject: sendForm.subject,
             html: sendForm.html,
+            replyToEmailId: replyToEmail?.id,
           }),
         });
 
@@ -82,13 +143,13 @@ export function SendEmailModal({
   return (
     <>
       {triggerButton ? (
-        <div onClick={() => setIsOpen(true)}>{triggerButton}</div>
+        <div onClick={handleOpen}>{triggerButton}</div>
       ) : (
         <Button
           className={className}
           variant="ghost"
           size="sm"
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
         >
           <Icons.send size={17} />
         </Button>
@@ -98,7 +159,7 @@ export function SendEmailModal({
         <DrawerContent className="fixed bottom-0 right-0 top-0 w-full rounded-none sm:max-w-xl">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-1">
-              {t("Send Email")}{" "}
+              {isReply ? t("Reply Email") : t("Send Email")}{" "}
               <Icons.help className="size-5 text-neutral-600 hover:text-neutral-400" />
             </DrawerTitle>
             <DrawerClose asChild>

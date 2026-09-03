@@ -2,12 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
 import { checkDomainIsConfiguratedResend } from "@/lib/dto/domains";
-import { getUserSendEmailCount, saveUserSendEmail } from "@/lib/dto/email";
+import {
+  canAccessEmailAddress,
+  getReplySourceEmail,
+  getUserSendEmailCount,
+  saveUserSendEmail,
+} from "@/lib/dto/email";
 import { getPlanQuota } from "@/lib/dto/plan";
 import { checkUserStatus } from "@/lib/dto/user";
 import { getCurrentUser } from "@/lib/session";
 import { restrictByTimeRange } from "@/lib/team";
 import { isValidEmail } from "@/lib/utils";
+
+// RFC 5322 message ids must be wrapped in angle brackets
+function formatMessageId(raw?: string | null) {
+  const messageId = (raw || "").trim();
+  if (!messageId) return null;
+  return messageId.startsWith("<") ? messageId : `<${messageId}>`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +38,7 @@ export async function POST(req: NextRequest) {
     if (limit)
       return NextResponse.json(limit.statusText, { status: limit.status });
 
-    const { from, to, subject, html } = await req.json();
+    const { from, to, subject, html, replyToEmailId } = await req.json();
 
     if (!from || !to || !subject || !html) {
       return NextResponse.json("Missing required fields", { status: 400 });
@@ -34,6 +46,37 @@ export async function POST(req: NextRequest) {
 
     if (!isValidEmail(from) || !isValidEmail(to)) {
       return NextResponse.json("Invalid email address", { status: 403 });
+    }
+
+    const canSendFrom = await canAccessEmailAddress(
+      from,
+      user.id,
+      user.role === "ADMIN",
+    );
+    if (!canSendFrom) {
+      return NextResponse.json(
+        "You can only send emails from your own email address",
+        { status: 403 },
+      );
+    }
+
+    // Reply mode: thread the reply onto the original email
+    let replyHeaders: Record<string, string> | undefined;
+    if (replyToEmailId) {
+      const sourceEmail = await getReplySourceEmail(replyToEmailId, from);
+      if (!sourceEmail) {
+        return NextResponse.json(
+          "The email you are replying to was not found in this inbox",
+          { status: 404 },
+        );
+      }
+      const messageId = formatMessageId(sourceEmail.messageId);
+      if (messageId) {
+        replyHeaders = {
+          "In-Reply-To": messageId,
+          References: messageId,
+        };
+      }
     }
 
     const resend_key = await checkDomainIsConfiguratedResend(
@@ -53,6 +96,7 @@ export async function POST(req: NextRequest) {
       to,
       subject,
       html,
+      ...(replyHeaders && { headers: replyHeaders }),
     });
 
     if (error) {

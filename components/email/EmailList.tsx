@@ -286,6 +286,7 @@ export default function EmailList({
               selectedEmailId={selectedEmailId}
               onClose={() => onSelectEmail(null)}
               onMarkAsRead={() => handleMarkAsRead(selectedEmailId)}
+              canReply
             />
           ) : (
             <>

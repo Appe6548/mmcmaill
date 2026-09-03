@@ -27,12 +27,14 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import EmailViewer from "./EmailViewer";
+import { SendEmailModal } from "./SendEmailModal";
 
 interface EmailDetailProps {
   email: ForwardEmail | undefined;
   selectedEmailId: string | null;
   onClose: () => void;
   onMarkAsRead: () => void;
+  canReply?: boolean; // 公开分享页保持只读，不展示回复按钮
 }
 
 interface Attachment {
@@ -85,6 +87,7 @@ export default function EmailDetail({
   selectedEmailId,
   onClose,
   onMarkAsRead,
+  canReply,
 }: EmailDetailProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const t = useTranslations("Email");
@@ -206,14 +209,32 @@ export default function EmailDetail({
             </p>
           )}
         </div>
-        <Button
-          className="ml-auto size-8 grow-0 px-1 py-1"
-          size={"sm"}
-          onClick={onClose}
-          variant={"outline"}
-        >
-          <Icons.close className="size-4" />
-        </Button>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {canReply && (
+            <SendEmailModal
+              emailAddress={email.to}
+              replyToEmail={email}
+              triggerButton={
+                <Button
+                  className="size-8 px-1 py-1"
+                  size={"sm"}
+                  variant={"outline"}
+                  title={t("Reply")}
+                >
+                  <Icons.reply className="size-4" />
+                </Button>
+              }
+            />
+          )}
+          <Button
+            className="size-8 px-1 py-1"
+            size={"sm"}
+            onClick={onClose}
+            variant={"outline"}
+          >
+            <Icons.close className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="scrollbar-hidden flex h-full flex-col justify-between overflow-y-auto">

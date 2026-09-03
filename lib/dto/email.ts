@@ -332,6 +332,22 @@ export async function getEmailsByEmailAddress(
   };
 }
 
+// 查询被回复的原始邮件（仅当该邮件正是 emailAddress 收到的才返回）
+export async function getReplySourceEmail(
+  emailId: string,
+  emailAddress: string,
+) {
+  return prisma.forwardEmail.findFirst({
+    where: {
+      id: emailId,
+      to: {
+        equals: emailAddress.trim(),
+        mode: "insensitive",
+      },
+    },
+  });
+}
+
 export async function canAccessEmailAddress(
   emailAddress: string,
   userId: string,
