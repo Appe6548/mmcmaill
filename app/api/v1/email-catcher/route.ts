@@ -1,11 +1,19 @@
 import { OriginalEmail, saveForwardEmail } from "@/lib/dto/email";
 import { getMultipleConfigs } from "@/lib/dto/system-config";
+import { extractHeaderFromAddress } from "@/lib/email-address";
 
 export async function POST(req: Request) {
   try {
     const data = (await req.json()) as OriginalEmail;
     if (!data) {
       return Response.json("No email data received", { status: 400 });
+    }
+
+    // worker 传来的 from 是 SMTP 信封发件人，可能是发送服务的弹回地址
+    // （如 Resend/SES 的 0106...@send.domain），展示与回复应以 From 头为准
+    const headerFrom = extractHeaderFromAddress(data.headers);
+    if (headerFrom) {
+      data.from = headerFrom;
     }
 
     const configs = await getMultipleConfigs([

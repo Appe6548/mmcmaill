@@ -62,6 +62,36 @@ type UserEmailLookup = {
   }): Promise<RecipientMailbox | null>;
 };
 
+type ParsedHeader = {
+  key?: string;
+  value?: string;
+};
+
+/**
+ * 从 worker 存储的 headers JSON（postal-mime Header[]）中提取 From 头的邮箱地址。
+ *
+ * SMTP 信封发件人可能是发送服务的弹回地址（如 Resend/SES 的
+ * `0106...@send.example.com`），展示与回复应以 From 头为准。
+ * 提取不到时返回空字符串。
+ */
+export function extractHeaderFromAddress(headersJson?: string | null): string {
+  if (!headersJson) return "";
+
+  let headers: unknown;
+  try {
+    headers = JSON.parse(headersJson);
+  } catch {
+    return "";
+  }
+  if (!Array.isArray(headers)) return "";
+
+  const fromHeader = (headers as ParsedHeader[]).find(
+    (header) =>
+      typeof header?.key === "string" && header.key.toLowerCase() === "from",
+  );
+  return extractEmailAddress(fromHeader?.value);
+}
+
 export async function findRecipientMailbox(
   userEmail: UserEmailLookup,
   recipient: string,
