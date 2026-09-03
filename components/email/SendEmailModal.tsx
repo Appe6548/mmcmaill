@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { ForwardEmail } from "@prisma/client";
 import { toast } from "sonner";
 
-import { formatDate, htmlToText, isValidEmail } from "@/lib/utils";
+import { extractEmailAddress } from "@/lib/email-address";
+import { formatDate, htmlToText } from "@/lib/utils";
 
 import { Icons } from "../shared/icons";
 import { Button } from "../ui/button";
@@ -31,15 +32,6 @@ interface SendEmailModalProps {
   replyToEmail?: ForwardEmail; // 回复模式：被回复的原始邮件
   triggerButton?: React.ReactNode; // 自定义触发按钮
   onSuccess?: () => void; // 发送成功后的回调
-}
-
-// 从 Reply-To 之类的字段中提取纯邮箱地址（可能是 `"Name <a@b.c>"`、`a@b.c` 或空引号）
-function extractEmailAddress(raw?: string | null): string {
-  if (!raw) return "";
-  const cleaned = raw.replace(/^"+|"+$/g, "").trim();
-  const match = cleaned.match(/<([^<>\s]+@[^<>\s]+)>/);
-  const address = (match ? match[1] : cleaned).trim();
-  return isValidEmail(address) ? address : "";
 }
 
 function escapeHtml(text: string): string {

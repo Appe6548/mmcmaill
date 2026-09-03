@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { siteConfig } from "@/config/site";
+import { extractEmailAddress } from "@/lib/email-address";
 import { cn, downloadFile, formatDate, formatFileSize } from "@/lib/utils";
 import { Icons } from "@/components/shared/icons";
 
@@ -112,6 +113,8 @@ export default function EmailDetail({
 
   if (!email) return null;
 
+  const replyToAddress = extractEmailAddress(email.replyTo);
+
   let attachments: Attachment[] = [];
   try {
     if (email.attachments) {
@@ -195,9 +198,9 @@ export default function EmailDetail({
           <p className="text-xs">
             <strong>{t("To")}:</strong> {email.to}
           </p>
-          {email.replyTo && email.replyTo !== '""' && (
+          {replyToAddress && (
             <p className="text-xs">
-              <strong>{t("Reply-To")}:</strong> {email.replyTo}
+              <strong>{t("Reply-To")}:</strong> {replyToAddress}
             </p>
           )}
           <p className="text-xs">
